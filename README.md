@@ -3,7 +3,9 @@
 # VLC-Style Media Player (Flutter sample)
 
 ## Overview
+
 This is a sample Flutter project that implements a VLC-style media player UI with:
+
 - Bottom navigation (Videos, Audio, Files, Settings)
 - Local media scanning (videos + audio)
 - Video playback using `video_player`
@@ -11,8 +13,11 @@ This is a sample Flutter project that implements a VLC-style media player UI wit
 - State management via `provider`
 - Thumbnail generation using `video_thumbnail`
 - Local persistence scaffolding using `hive`
+- Multi-language video support with selectable audio tracks
+- Adjustable brightness and volume controls
 
 ## How to run
+
 1. Ensure Flutter SDK installed (stable channel).
 2. Add sample media files to `assets/sample_media/` or grant device storage permission to scan.
 3. `flutter pub get`

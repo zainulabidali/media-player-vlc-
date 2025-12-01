@@ -56,17 +56,15 @@ class _PlayerControlsState extends State<PlayerControls> {
 
               const SizedBox(height: 20),
 
-              
-
               // --- PROGRESS BAR ---
               if (vc != null && vc.value.isInitialized)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: VideoProgressIndicator(
-                    
                     colors: VideoProgressColors(
                       playedColor: AppColors.accent,
-                      bufferedColor: const Color.fromARGB(31, 86, 55, 20).withOpacity(0.5),
+                      bufferedColor:
+                          const Color.fromARGB(31, 86, 55, 20).withOpacity(0.5),
                       backgroundColor: Colors.white.withOpacity(0.25),
                     ),
                     vc,
@@ -75,9 +73,52 @@ class _PlayerControlsState extends State<PlayerControls> {
                   ),
                 ),
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 5),
             ],
           ),
+
+          // --- Audio Track Selection ---
+          if (pp.availableAudioTracks.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.audiotrack, size: 11, color: AppColors.text),
+                const SizedBox(width: 8),
+                const Text("Audio Track:",
+                    style: TextStyle(color: AppColors.text, fontSize: 10)),
+                const SizedBox(width: 8),
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<int>(
+                    value: pp.selectedAudioTrackIndex,
+                    dropdownColor: Colors.black87,
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 12,
+                    ),
+                    icon: const Icon(Icons.arrow_drop_down,
+                        color: AppColors.text, size: 18),
+                    items:
+                        List.generate(pp.availableAudioTracks.length, (index) {
+                      return DropdownMenuItem(
+                        value: index,
+                        child: Text(
+                          pp.availableAudioTracks[index].language,
+                          style: const TextStyle(fontSize: 10),
+                        ),
+                      );
+                    }),
+                    onChanged: (index) {
+                      if (index != null) {
+                        // Handle audio track selection
+                        _handleAudioTrackSelection(context, index);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+            // const SizedBox(height: 12),
+          ],
+
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
@@ -128,6 +169,13 @@ class _PlayerControlsState extends State<PlayerControls> {
                     await vc.seekTo(
                       newPos >= Duration.zero ? newPos : Duration.zero,
                     );
+
+                    // Also seek the audio track if one is selected
+                    if (pp.selectedAudioTrackIndex > 0 &&
+                        pp.availableAudioTracks.isNotEmpty) {
+                      await pp.audioPlayer.seek(
+                          newPos >= Duration.zero ? newPos : Duration.zero);
+                    }
                   }
                 },
               ),
@@ -153,6 +201,12 @@ class _PlayerControlsState extends State<PlayerControls> {
                     final pos = vc.value.position + const Duration(seconds: 10);
                     final dur = vc.value.duration;
                     await vc.seekTo(pos <= dur ? pos : dur);
+
+                    // Also seek the audio track if one is selected
+                    if (pp.selectedAudioTrackIndex > 0 &&
+                        pp.availableAudioTracks.isNotEmpty) {
+                      await pp.audioPlayer.seek(pos <= dur ? pos : dur);
+                    }
                   }
                 },
               ),
@@ -161,6 +215,23 @@ class _PlayerControlsState extends State<PlayerControls> {
         ],
       ),
     );
+  }
+
+  // Handle audio track selection with error handling
+  void _handleAudioTrackSelection(BuildContext context, int index) {
+    final pp = Provider.of<PlayerProvider>(context, listen: false);
+
+    pp.selectAudioTrack(index).catchError((error) {
+      // Show error message if track selection fails
+      if (Scaffold.maybeOf(context) != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to load audio track: $error'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
   }
 
   // --- Reusable rounded glass button ---
@@ -181,7 +252,7 @@ class _PlayerControlsState extends State<PlayerControls> {
         child: Icon(
           icon,
           size: size,
-          color: AppColors.accent,
+          color: const Color.fromARGB(255, 255, 255, 255),
         ),
       ),
     );

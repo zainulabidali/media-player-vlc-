@@ -39,7 +39,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text("Player"),
+        title: Text(
+                vc?.dataSource ?? "",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.text,
+                  fontSize: 16,
+                ),
+              ),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -79,7 +87,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ),
 
                 /// BOTTOM INFORMATION PANEL OVERLAY
-              ],
+              ] ,
             ),
     );
   }
