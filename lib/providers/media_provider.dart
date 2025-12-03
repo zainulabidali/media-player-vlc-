@@ -1,12 +1,11 @@
 // FILE: lib/providers/media_provider.dart
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import '../models/media_file.dart';
-import '../services/media_service.dart';
-import '../services/thumbnail_service.dart';
+import '../services/enhanced_media_scanner.dart';
 
 class MediaProvider extends ChangeNotifier {
-  final MediaService _service = MediaService();
-  final ThumbnailService _thumbService = ThumbnailService();
+  final EnhancedMediaScanner _scanner = EnhancedMediaScanner();
 
   List<MediaFile> _videos = [];
   List<MediaFile> _audios = [];
@@ -16,29 +15,47 @@ class MediaProvider extends ChangeNotifier {
   List<MediaFile> get audios => _audios;
   bool get loading => _loading;
 
-  Future<void> scan() async {
-    _loading = true;
-    notifyListeners();
-    final list = await _service.scanDeviceForMedia();
+  MediaProvider() {
+    _init();
+  }
+
+  Future<void> _init() async {
+    await _scanner.init();
+
+    // Listen to media updates
+    _scanner.mediaStream.listen((mediaFiles) {
+      _updateMediaLists(mediaFiles);
+    });
+  }
+
+  void _updateMediaLists(List<MediaFile> mediaFiles) {
     final vids = <MediaFile>[];
     final auds = <MediaFile>[];
-    for (final m in list) {
-      if (m.isVideo) {
-        // generate thumbnail (best-effort)
-        final thumb = await _thumbService.generate(m.path);
-        vids.add(MediaFile(
-          path: m.path,
-          name: m.name,
-          isVideo: true,
-          thumbnailPath: thumb,
-        ));
+
+    for (final media in mediaFiles) {
+      if (media.isVideo) {
+        vids.add(media);
       } else {
-        auds.add(m);
+        auds.add(media);
       }
     }
+
     _videos = vids;
     _audios = auds;
-    _loading = false;
-    notifyListeners();
+    _loading = _scanner.isScanning;
+
+    // Use addPostFrameCallback to avoid setState during build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      notifyListeners();
+    });
+  }
+
+  Future<void> scan({bool forceRescan = false}) async {
+    await _scanner.scanMedia(forceRescan: forceRescan);
+  }
+
+  Future<void> dispose() async {
+    await _scanner.dispose();
+    super.dispose();
   }
 }

@@ -7,31 +7,14 @@ import '../providers/player_provider.dart';
 import 'player_screen.dart';
 import '../constants.dart';
 
-class VideosScreen extends StatefulWidget {
+class VideosScreen extends StatelessWidget {
   const VideosScreen({super.key});
-  @override
-  State<VideosScreen> createState() => _VideosScreenState();
-}
-
-class _VideosScreenState extends State<VideosScreen> {
-
-  @override
-  void initState() {
-    super.initState();
-
-    // FIX: scan() should not be called directly inside initState().
-    // Use post-frame callback to avoid "setState during build" error.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final mp = Provider.of<MediaProvider>(context, listen: false);
-      mp.scan();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<MediaProvider>(
       builder: (context, mp, _) {
-        if (mp.loading) {
+        if (mp.loading && mp.videos.isEmpty) {
           return const Center(
             child: CircularProgressIndicator(),
           );

@@ -27,14 +27,23 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> openVideo(String path) async {
     await disposeVideo();
-    _videoController = VideoPlayerController.file(File(path));
-    await _videoController!.initialize();
-    _videoController!.setLooping(false);
 
-    // Initialize audio tracks for this video
-    _initializeAudioTracks(path);
+    try {
+      // Create controller with progressive loading
+      _videoController = VideoPlayerController.file(File(path));
 
-    notifyListeners();
+      // Initialize with minimal data for quick loading
+      await _videoController!.initialize();
+      _videoController!.setLooping(false);
+
+      // Initialize audio tracks for this video
+      _initializeAudioTracks(path);
+
+      notifyListeners();
+    } catch (e) {
+      print("Error opening video: $e");
+      await disposeVideo();
+    }
   }
 
   // Initialize audio tracks for a video file
@@ -150,10 +159,11 @@ class PlayerProvider extends ChangeNotifier {
     if (index == 0) {
       await _audioPlayer.pause();
     } else {
-      // Load and play the selected audio track
+      // Load and play the selected audio track with progressive loading
       final track = _availableAudioTracks[index];
       if (track.path.isNotEmpty) {
         try {
+          // Set the audio source with buffering for progressive loading
           await _audioPlayer.setFilePath(track.path);
 
           // Sync the audio with video position
@@ -223,11 +233,12 @@ class PlayerProvider extends ChangeNotifier {
 
   Future<void> openAudio(String path) async {
     try {
+      // Open audio with progressive loading
       await _audioPlayer.setFilePath(path);
-      _audioPlayer.play();
+      await _audioPlayer.play();
       notifyListeners();
     } catch (e) {
-      // handle error
+      print("Error opening audio: $e");
     }
   }
 

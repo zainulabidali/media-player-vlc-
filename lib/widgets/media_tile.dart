@@ -20,15 +20,7 @@ class MediaTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: media.thumbnailPath != null
-                  ? Image.file(
-                      File(media.thumbnailPath!),
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      color: Colors.black26,
-                      child: const Icon(Icons.play_circle_fill, size: 48),
-                    ),
+              child: _buildMediaContent(),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -40,6 +32,52 @@ class MediaTile extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMediaContent() {
+    if (media.thumbnailPath != null && media.thumbnailPath!.isNotEmpty) {
+      return _buildThumbnailImage();
+    } else {
+      return _buildPlaceholder();
+    }
+  }
+
+  Widget _buildThumbnailImage() {
+    return Image.file(
+      File(media.thumbnailPath!),
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        // Log the error for debugging
+        print(
+            "Failed to load thumbnail: ${media.thumbnailPath}, error: $error");
+        // Fallback to placeholder
+        return _buildPlaceholder();
+      },
+    );
+  }
+
+  Widget _buildPlaceholder() {
+    IconData icon;
+    Color color;
+
+    if (media.isVideo) {
+      icon = Icons.play_circle_outline_rounded;
+      color = const Color.fromARGB(255, 121, 120, 118);
+    } else {
+      icon = Icons.music_note;
+      color = AppColors.text;
+    }
+
+    return Container(
+      color: Colors.black26,
+      child: Center(
+        child: Icon(
+          icon,
+          size: 48,
+          color: color,
         ),
       ),
     );
