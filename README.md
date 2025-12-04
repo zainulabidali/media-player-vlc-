@@ -1,10 +1,10 @@
 // FILE: README.md
 
-# VLC-Style Media Player (Flutter sample)
+# JK Wave - Media Player (Flutter)
 
 ## Overview
 
-This is a sample Flutter project that implements a VLC-style media player UI with:
+This is a feature-rich Flutter project that implements a media player UI with:
 
 - Bottom navigation (Videos, Audio, Files, Settings)
 - Local media scanning (videos + audio)

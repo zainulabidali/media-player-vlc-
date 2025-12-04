@@ -1,4 +1,4 @@
-# VLC Media Player - Feature Implementation Summary
+# JK Wave Media Player - Feature Implementation Summary
 
 ## Implemented Features
 
@@ -41,7 +41,7 @@
 
 ### UI/UX Design
 
-- Clean, intuitive interface following VLC's design principles
+- Clean, intuitive interface following modern design principles
 - Controls appear only when needed (audio track selector)
 - Sliders for precise brightness and volume adjustment
 - Consistent styling with the existing app theme

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 class AppColors {
   static const background = Color(0xFF121212);
-  static const accent = Color.fromARGB(255, 3, 86, 240); // VLC orange
+  static const accent = Color.fromARGB(255, 106, 66, 208); // Primary accent color
   static const surface = Color(0xFF1E1E1E);
   static const text = Colors.white;
 

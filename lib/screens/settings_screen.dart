@@ -264,7 +264,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('VLC Media Player Clone',
+                  const Text('JK Wave Media Player',
                       style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,

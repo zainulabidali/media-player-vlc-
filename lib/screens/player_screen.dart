@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../providers/player_provider.dart';
 import '../widgets/player_controls.dart';
 import '../constants.dart';
-import 'package:video_player/video_player.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -25,7 +25,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         final pp = Provider.of<PlayerProvider>(context, listen: false);
-        if (pp.videoController?.value.isInitialized ?? false) {
+        // For media_kit, we check if the player has loaded tracks
+        if (pp.availableAudioTracks.isNotEmpty ||
+            pp.availableSubtitleTracks.isNotEmpty) {
           setState(() {
             _isLoading = false;
           });
@@ -45,27 +47,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
   @override
   Widget build(BuildContext context) {
     final pp = Provider.of<PlayerProvider>(context);
-    final vc = pp.videoController;
-
-    // Listen to video controller updates
-    if (vc != null) {
-      vc.addListener(() {
-        if (mounted && _isLoading && vc.value.isInitialized) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-        if (mounted) {
-          setState(() {});
-        }
-      });
-    }
 
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: Text(
-          vc?.dataSource ?? "",
+          pp.player.state.playlist.medias.isNotEmpty
+              ? pp.player.state.playlist.medias.first.uri
+              : "",
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(
@@ -76,7 +65,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
-      body: _isLoading && (vc == null || !vc.value.isInitialized)
+      body: _isLoading && pp.player.state.playlist.medias.isEmpty
           ? Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -90,7 +79,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 ],
               ),
             )
-          : vc == null || !vc.value.isInitialized
+          : pp.player.state.playlist.medias.isEmpty
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -107,13 +96,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                   children: [
                     /// FULLSCREEN VIDEO
                     Positioned.fill(
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: SizedBox(
-                          width: vc.value.size.width,
-                          height: vc.value.size.height,
-                          child: VideoPlayer(vc),
-                        ),
+                      child: Video(
+                        controller: pp.videoController,
                       ),
                     ),
 
@@ -124,6 +108,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         child: PlayerControls(),
                       ),
                     ),
+
+                    
 
                     /// BOTTOM INFORMATION PANEL OVERLAY
                   ],

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:media_kit_video/media_kit_video.dart';
 import '../providers/player_provider.dart';
 import '../constants.dart';
-import 'package:video_player/video_player.dart';
 
 class PlayerControls extends StatefulWidget {
   const PlayerControls({super.key});
@@ -15,7 +15,6 @@ class _PlayerControlsState extends State<PlayerControls> {
   @override
   Widget build(BuildContext context) {
     final pp = Provider.of<PlayerProvider>(context, listen: true);
-    final vc = pp.videoController;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
@@ -34,94 +33,121 @@ class _PlayerControlsState extends State<PlayerControls> {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                "Now Playing",
-                style: TextStyle(
-                  color: Color.fromARGB(255, 251, 251, 251),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 6),
-
-              Text(
-                vc?.dataSource ?? "",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.text,
-                  fontSize: 11,
-                ),
-              ),
-
               const SizedBox(height: 20),
 
               // --- PROGRESS BAR ---
-              if (vc != null && vc.value.isInitialized)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: VideoProgressIndicator(
-                    colors: VideoProgressColors(
-                      playedColor: AppColors.accent,
-                      bufferedColor:
-                          const Color.fromARGB(31, 86, 55, 20).withOpacity(0.5),
-                      backgroundColor: Colors.white.withOpacity(0.25),
-                    ),
-                    vc,
-                    allowScrubbing: true,
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
+              StreamBuilder<Duration>(
+                  stream: pp.player.stream.position,
+                  builder: (context, snapshot) {
+                    final duration = pp.player.state.duration;
+                    final position = snapshot.data ?? Duration.zero;
+
+                    return ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child:Container(
+                        height: 30,
+                        padding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+                        child: StreamBuilder<Duration>(
+                          stream: pp.player.stream.position,
+                          builder: (context, snapshot) {
+                            final duration = pp.player.state.duration;
+                            final position = snapshot.data ?? Duration.zero;
+                            final value = duration.inMilliseconds > 0
+                                ? position.inMilliseconds /
+                                    duration.inMilliseconds
+                                : 0.0;
+
+                            return SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                activeTrackColor: Colors.red,
+                                inactiveTrackColor:
+                                    Colors.white.withOpacity(0.25),
+                                thumbColor: Colors.red,
+                                thumbShape: const RoundSliderThumbShape(
+                                    enabledThumbRadius: 8),
+                                overlayShape: const RoundSliderOverlayShape(
+                                    overlayRadius: 16),
+                                trackHeight: 4,
+                              ),
+                              child: Slider(
+                                value: value.clamp(0.0, 1.0).toDouble(),
+                                onChanged: (newValue) {
+                                  if (duration.inMilliseconds > 0) {
+                                    final newPosition = Duration(
+                                      milliseconds:
+                                          (newValue * duration.inMilliseconds)
+                                              .toInt(),
+                                    );
+                                    pp.seekVideo(newPosition);
+                                  }
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }),
 
               const SizedBox(height: 5),
             ],
           ),
 
-          // --- Audio Track Selection ---
-          if (pp.availableAudioTracks.isNotEmpty) ...[
-            Row(
-              children: [
-                const Icon(Icons.audiotrack, size: 11, color: AppColors.text),
-                const SizedBox(width: 8),
-                const Text("Audio Track:",
-                    style: TextStyle(color: AppColors.text, fontSize: 10)),
-                const SizedBox(width: 8),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<int>(
-                    value: pp.selectedAudioTrackIndex,
-                    dropdownColor: Colors.black87,
-                    style: const TextStyle(
-                      color: AppColors.text,
-                      fontSize: 12,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // --- Audio Track Selection ---
+              if (pp.availableAudioTracks.isNotEmpty) ...[
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        _showAudioAndSubtitleDetails(context);
+                      },
+                      icon: Icon(Icons.subtitles,
+                          size: 18, color: AppColors.text),
                     ),
-                    icon: const Icon(Icons.arrow_drop_down,
-                        color: AppColors.text, size: 18),
-                    items:
-                        List.generate(pp.availableAudioTracks.length, (index) {
-                      return DropdownMenuItem(
-                        value: index,
-                        child: Text(
-                          pp.availableAudioTracks[index].language,
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      );
-                    }),
-                    onChanged: (index) {
-                      if (index != null) {
-                        // Handle audio track selection
-                        _handleAudioTrackSelection(context, index);
-                      }
-                    },
-                  ),
+                  ],
                 ),
               ],
-            ),
-            // const SizedBox(height: 12),
-          ],
+              SizedBox(
+                width: 10,
+              ),
+              // Rewind 10
+              _roundButton(
+                icon: Icons.replay_10,
+                onTap: () async {
+                  final currentPosition = pp.player.state.position;
+                  final newPos = currentPosition - const Duration(seconds: 10);
+                  await pp.seekVideo(
+                      newPos >= Duration.zero ? newPos : Duration.zero);
+                },
+              ),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
+              const SizedBox(width: 20),
+
+              // Play / Pause
+              _roundButton(
+                icon: pp.isVideoPlaying ? Icons.pause : Icons.play_arrow,
+                size: 38,
+                onTap: () => pp.toggleVideoPlay(),
+              ),
+
+              const SizedBox(width: 20),
+
+              // Forward 10
+              _roundButton(
+                icon: Icons.forward_10,
+                onTap: () async {
+                  final currentPosition = pp.player.state.position;
+                  final duration = pp.player.state.duration;
+                  final newPos = currentPosition + const Duration(seconds: 10);
+                  await pp.seekVideo(newPos <= duration ? newPos : duration);
+                },
+              ),
+              SizedBox(
+                width: 5,
+              ),
               Row(
                 children: [
                   Container(
@@ -134,7 +160,7 @@ class _PlayerControlsState extends State<PlayerControls> {
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<double>(
-                        value: vc?.value.playbackSpeed ?? 1.0,
+                        value: pp.player.state.rate,
                         dropdownColor: Colors.black87,
                         style: const TextStyle(
                           color: AppColors.text,
@@ -149,66 +175,13 @@ class _PlayerControlsState extends State<PlayerControls> {
                           DropdownMenuItem(value: 2.0, child: Text("2x")),
                         ],
                         onChanged: (v) {
-                          if (v != null) vc?.setPlaybackSpeed(v);
-
-                          // Force UI update by notifying provider
+                          if (v != null) pp.player.setRate(v);
                           pp.notifyListeners();
                         },
                       ),
                     ),
                   ),
                 ],
-              ),
-              // Rewind 10
-              _roundButton(
-                icon: Icons.replay_10,
-                onTap: () async {
-                  if (vc != null && vc.value.isInitialized) {
-                    final newPos =
-                        vc.value.position - const Duration(seconds: 10);
-                    await vc.seekTo(
-                      newPos >= Duration.zero ? newPos : Duration.zero,
-                    );
-
-                    // Also seek the audio track if one is selected
-                    if (pp.selectedAudioTrackIndex > 0 &&
-                        pp.availableAudioTracks.isNotEmpty) {
-                      await pp.audioPlayer.seek(
-                          newPos >= Duration.zero ? newPos : Duration.zero);
-                    }
-                  }
-                },
-              ),
-
-              const SizedBox(width: 20),
-
-              // Play / Pause
-              _roundButton(
-                icon: vc != null && vc.value.isPlaying
-                    ? Icons.pause
-                    : Icons.play_arrow,
-                size: 38,
-                onTap: () => pp.toggleVideoPlay(),
-              ),
-
-              const SizedBox(width: 20),
-
-              // Forward 10
-              _roundButton(
-                icon: Icons.forward_10,
-                onTap: () async {
-                  if (vc != null && vc.value.isInitialized) {
-                    final pos = vc.value.position + const Duration(seconds: 10);
-                    final dur = vc.value.duration;
-                    await vc.seekTo(pos <= dur ? pos : dur);
-
-                    // Also seek the audio track if one is selected
-                    if (pp.selectedAudioTrackIndex > 0 &&
-                        pp.availableAudioTracks.isNotEmpty) {
-                      await pp.audioPlayer.seek(pos <= dur ? pos : dur);
-                    }
-                  }
-                },
               ),
             ],
           ),
@@ -217,28 +190,190 @@ class _PlayerControlsState extends State<PlayerControls> {
     );
   }
 
-  // Handle audio track selection with error handling
-  void _handleAudioTrackSelection(BuildContext context, int index) {
+  // Show audio tracks and subtitle details in a bottom sheet
+  void _showAudioAndSubtitleDetails(BuildContext context) {
     final pp = Provider.of<PlayerProvider>(context, listen: false);
 
-    pp.selectAudioTrack(index).catchError((error) {
-      // Show error message if track selection fails
-      if (Scaffold.maybeOf(context) != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to load audio track: $error'),
-            backgroundColor: Colors.red,
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).dialogBackgroundColor,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Audio Tracks Section
+              if (pp.availableAudioTracks.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.only(top: 10, left: 20),
+                  child: Text(
+                    'Audio',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 10,
+                ),
+                SizedBox(
+                  height: 50,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: pp.availableAudioTracks.length,
+                    itemBuilder: (context, index) {
+                      final isSelected = index == pp.selectedAudioTrackIndex;
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 16.0),
+                        child: ChoiceChip(
+                          label: Text(
+                              pp.availableAudioTracks[index].title ??
+                                  'Track ${index + 1}',
+                              style:
+                                  TextStyle(color: Colors.white, fontSize: 11)),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            if (selected) {
+                              _handleAudioTrackSelection(context, index);
+                            }
+                          },
+                          selectedColor: const Color.fromARGB(0, 248, 249, 249),
+                          // backgroundColor: Colors.grey.withOpacity(0.3),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+
+              // Subtitles Section
+              if (pp.availableSubtitleTracks.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+                  child: Text(
+                    'Subtitles',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 50,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: pp.availableSubtitleTracks.length +
+                        1, // +1 for "None" option
+                    itemBuilder: (context, index) {
+                      // Index 0 is "None", then subtitle tracks
+                      final isNoneSelected =
+                          index == 0 && pp.selectedSubtitleTrackIndex == -1;
+                      final isTrackSelected = index > 0 &&
+                          (index - 1) == pp.selectedSubtitleTrackIndex;
+                      final isSelected = isNoneSelected || isTrackSelected;
+
+                      if (index == 0) {
+                        // None option
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 16.0),
+                          child: ChoiceChip(
+                            label: const Text('None',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 11)),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                _handleSubtitleTrackSelection(context, -1);
+                              }
+                            },
+                            selectedColor:
+                                const Color.fromARGB(0, 248, 249, 249),
+                          ),
+                        );
+                      } else {
+                        // Subtitle track
+                        final trackIndex = index - 1;
+                        return Padding(
+                          padding: const EdgeInsets.fromLTRB(8.0, 0, 8.0, 16.0),
+                          child: ChoiceChip(
+                            label: Text(
+                                pp.availableSubtitleTracks[trackIndex].title ??
+                                    'Subtitle ${trackIndex + 1}',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 11)),
+                            selected: isSelected,
+                            onSelected: (selected) {
+                              if (selected) {
+                                _handleSubtitleTrackSelection(
+                                    context, trackIndex);
+                              }
+                            },
+                            selectedColor:
+                                const Color.fromARGB(0, 248, 249, 249),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ] else ...[
+                // Subtitles Section (Placeholder for when no subtitle tracks available)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16.0, 8.0, 16.0, 8.0),
+                  child: Text(
+                    'Subtitles',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                  child: ListTile(
+                    title: const Text('No subtitle tracks available'),
+                    tileColor: Colors.grey.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ],
+
+              const SizedBox(height: 16),
+            ],
           ),
         );
-      }
-    });
+      },
+    );
+  }
+
+  // Handle audio track selection
+  void _handleAudioTrackSelection(BuildContext context, int index) {
+    final pp = Provider.of<PlayerProvider>(context, listen: false);
+    pp.selectAudioTrack(index);
+  }
+
+  // Handle subtitle track selection
+  void _handleSubtitleTrackSelection(BuildContext context, int index) {
+    final pp = Provider.of<PlayerProvider>(context, listen: false);
+    pp.selectSubtitleTrack(index);
   }
 
   // --- Reusable rounded glass button ---
   Widget _roundButton({
     required IconData icon,
     required VoidCallback onTap,
-    double size = 30,
+    double size = 20,
   }) {
     return Container(
       padding: const EdgeInsets.all(10),

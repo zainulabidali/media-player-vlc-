@@ -1,6 +1,6 @@
 // FILE: pubspec.yaml
 name: vlc_clone_sample
-description: VLC-style media player sample (Flutter + Provider + Hive + video_player + just_audio)
+description: JK Wave - Feature-rich media player (Flutter + Provider + Hive + video_player + just_audio)
 publish_to: "none"
 version: 0.0.1
 
@@ -17,6 +17,9 @@ dependencies:
   permission_handler: 
   video_player: 
   just_audio: 
+  media_kit: ^1.0.0
+  media_kit_video: ^1.0.0
+  media_kit_libs_android_video: ^1.0.0 
   file_picker: 
   video_thumbnail: 
   intl: 
@@ -40,9 +43,9 @@ flutter:
 
 flutter_native_splash:
   color: "#000000"
-  image: assets/Picsart_25-12-03_09-44-34-316.png
+  image: assets/Picsart_25-12-04_18-05-58-416.png
   android_12:
-    image: assets/Picsart_25-12-03_09-44-34-316.png
+    image: assets/Picsart_25-12-04_18-05-58-416.png
     color: "#000000"
   ios: true
   web: false
@@ -50,7 +53,7 @@ flutter_native_splash:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/Picsart_25-12-03_09-44-34-316.png"
+  image_path: "assets/Picsart_25-12-04_18-05-58-416.png"
   min_sdk_android: 21
   adaptive_icon_background: "#000000"
-  adaptive_icon_foreground: "assets/Picsart_25-12-03_09-44-34-316.png"
+  adaptive_icon_foreground: "assets/Picsart_25-12-04_18-05-58-416.png"

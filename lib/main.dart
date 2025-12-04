@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:media_kit/media_kit.dart';
 import 'app.dart';
 import 'providers/media_provider.dart';
 import 'providers/player_provider.dart';
@@ -10,6 +11,8 @@ import 'services/enhanced_media_scanner.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize MediaKit
+  MediaKit.ensureInitialized();
   await Hive.initFlutter();
 
   // Initialize the enhanced media scanner

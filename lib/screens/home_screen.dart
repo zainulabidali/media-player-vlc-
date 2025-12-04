@@ -78,12 +78,14 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               width: 10,
             ),
-            Image(
-              image: AssetImage("assets/Picsart_25-12-03_09-44-34-316.png"),
-              height: 24,
+            // Image(
+            //   image: AssetImage("assets/Picsart_25-12-04_18-05-58-416.png"),
+            //   height: 50,
+            // ),
+            SizedBox(
+              width: 5,
             ),
-            SizedBox(width: 5,),
-            Text('Vlc'),
+            Text('JK Wave'),
           ],
         ),
         backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
@@ -169,7 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-          VLCBottomNav(
+          JKWaveBottomNav(
             currentIndex: _index,
             onTap: (i) => setState(() => _index = i),
           ),

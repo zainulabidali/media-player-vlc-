@@ -54,11 +54,11 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'VLC Clone Sample',
+      title: 'JK Wave',
       debugShowCheckedModeBanner: false,
       theme: _currentTheme == 'light'
           ? ThemeData.light().copyWith(
-              scaffoldBackgroundColor: Colors.grey[100],
+              scaffoldBackgroundColor: const Color.fromARGB(255, 240, 239, 239),
               colorScheme: ColorScheme.light().copyWith(
                 primary: AppColors.accent,
               ),
